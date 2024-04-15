@@ -12,13 +12,13 @@
     - [14.4.3 X-Frame-Options](#14.4.3-X-Frame-Options)
     - [14.4.4 Permissions-Policy](#14.4.4-Permissions-Policy)
     - [14.4.5 X-Content-Type-Options](#14.4.5-X-Content-Type-Options)
-    - 14.4.6 Referrer-Policy
-    - 14.4.7 Content-Security-Policy
-    - 14.4.8 보안 헤더 설정하기
-    - 14.4.9 보안 헤더 확인하기
-- 14.5 취약점이 있는 패키지의 사용을 피하자
-- 14.6 OWASP Top 10
-- 14.7 정리
+    - [14.4.6 Referrer-Policy](#14.4.6-Referrer-Policy)
+    - [14.4.7 Content-Security-Policy](#14.4.7-Content-Security-Policy)
+    - [14.4.8 보안 헤더 설정하기](#14.4.8-보안-헤더-설정하기)
+    - [14.4.9 보안 헤더 확인하기](#14.4.9-보안-헤더-확인하기)
+- [14.5 취약점이 있는 패키지의 사용을 피하자](#14.5-취약점이-있는-패키지의-사용을-피하자)
+- [14.6 OWASP Top 10](#14.6-OWASP-Top-10)
+- [14.7 정리](#14.7-정리)
 
 ## 14.1 리액트에서 발생하는 크로스 사이트 스크립팅(XSS)
 웹 애플리케이션에서 가장 많이 보이는 취약점 중 하나로, 제 3자가 웹사이트에 악성 스크립트를 삽입해 실행할 수 있는 취약점을 의미한다. 이 취약점은 주로 게시판 같이 사용자가 입력할 수 있고, 입력을 다른 사용자에게 보여줄 수 있는 경우에 발생한다.
@@ -92,5 +92,75 @@ HTTP 보안 헤더란 브라우저가 렌더링하는 내용과 관련된 보안
 ### 14.4.5 X-Content-Type-Options
 Content-type 헤더에서 제공하는 MIME 유형이 브라우저에 의해 임의로 변경되지 않게 하는 헤더다. 즉, 웹서버가 브라우저에 강제로 이 파일을 읽는 방식을 지정하는 것이다.
 
-MIME(Multipurpose Internet Mail Extensions)은 메일을 전송할 때 사용하던 인코딩 방식이었지만 현재는 content-type의 값으로 대표적으로 사용되고 있다. jpg, CSS, JSON 등 다양하다.
+> MIME(Multipurpose Internet Mail Extensions)은 메일을 전송할 때 사용하던 인코딩 방식이었지만 현재는 content-type의 값으로 대표적으로 사용되고 있다. jpg, CSS, JSON 등 다양하다.
 
+예를 들어 헤더에 다음과 같은 설정을 하면 파일의 타입이 CSS나 MIME이 text/css가 아닌 경우, 파일 내용이 script나 MIME이 javascript가 아니면 차단하게 된다.
+```
+X-Content-Type-Options: nosniff
+```
+
+### 14.4.6 Referrer-Policy
+HTTP 요청에는 Referer 헤더가 존재하는데, 이 헤더에는 현재 요청을 보낸 페이지의 주소가 나타난다. Referrer-Policy는 이 Referer 헤더에서 사용할 수 있는 데이터를 나타낸다.
+
+> 출처(origin): scheme, hostname, port의 조합
+same-origin, cross-origin은 이 세 가지를 비교함
+
+Referrer-Policy의 값
+- no-referrer
+- origin
+- unsafe-url
+- strict-origin
+- no-referrer-when-downgrade
+- origin-when-cross-origin
+- same-origin
+- strict-origin-when-cross-origin
+
+Referrer-Policy는 응답 헤더뿐만 아니라 페이지의 `<meta/>` 태그로도 설정할 수 있다.
+```
+<meta name="referrer" content="origin">
+```
+
+그리고 페이지 이동 시나 이미지 요청, link 태그 등에도 사용할 수 있다.
+```
+<a href="" referrerpolicy="origin">...</a>
+```
+
+### 14.4.7 Content-Security-Policy
+콘텐츠 보안 정책(CSP)은 XSS 공격이나 삽입 공격 공격과 같은 다양한 보안 위협을 막기 위해 설계됐다.
+
+대표적으로 이용되는 지시문
+#### *-src
+#### form-action
+
+
+### 14.4.8 보안 헤더 설정하기
+#### Next.js
+next.config.js에 보안을 위한 HTTP 경로별 보안 헤더를 적용할 수 있다.
+```
+const securityHeaders = [{ key: "key", value: "value" }];
+
+module.exports = {
+  async headers() {
+    return [
+      {
+        // 모든 주소에 설정한다.
+        source: "/:path*",
+        headers: securityHeaders,
+      },
+    ];
+  },
+};
+```
+
+#### NGINX
+add_header 지시자를 사용해 경로별로 원하는 응답 헤더를 추가할 수 있다.
+
+### 14.4.9 보안 헤더 확인하기
+`https://securityheaders.com/`을 방문해 확인하고 싶은 웹사이트의 주소를 입력하면 보안 헤더 현황을 확인할 수 있다.
+
+## 14.5 취약점이 있는 패키지의 사용을 피하자
+
+## 14.6 OWASP Top 10
+OWASP은 Open Worldwide (Web) Application Security Project라는 오픈소스 웹 애플리케이션 보안 프로젝트를 의미한다. 주로 웹에서 발생할 수 잇는 정보 노출, 악성 스크립트, 보안 취약점 등을 연구하며, 주기적으로 10대 웹 애플리케이션 취약점을 공개하는데 이를 OWASP Top 10이라고 한다.
+
+## 14.7 정리
